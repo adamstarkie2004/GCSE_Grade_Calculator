@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Exam Results Calculator</title>
+<style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        background: #f8f9fa;
+        color: #212529;
+        padding: 24px;
+        min-height: 100vh;
+    }
+
+    .app {
+        max-width: 960px;
+        margin: 0 auto;
+    }
+
+    h1 {
+        font-size: 22px;
+        font-weight: 700;
+        margin-bottom: 24px;
+        color: #111;
+    }
+
+    /* Tabs */
+    .tabs {
+        display: flex;
+        gap: 4px;
+        border-bottom: 2px solid #e9ecef;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    .tab {
+        padding: 10px 18px;
+        border: none;
+        background: none;
+        font-size: 14px;
+        font-weight: 500;
+        color: #6c757d;
+        cursor: pointer;
+        border-bottom: 2px solid transparent;
+        margin-bottom: -2px;
+        transition: color 0.15s, border-color 0.15s;
+    }
+
+    .tab:hover { color: #212529; }
+
+    .tab.active {
+        color: #2563eb;
+        border-bottom-color: #2563eb;
+        font-weight: 600;
+    }
+
+    .tab-add {
+        padding: 8px 14px;
+        border: 1px dashed #adb5bd;
+        border-radius: 6px;
+        background: none;
+        color: #6c757d;
+        font-size: 13px;
+        cursor: pointer;
+        margin-left: 8px;
+    }
+
+    .tab-add:hover { border-color: #2563eb; color: #2563eb; }
+
+    /* Subject panel */
+    .subject-panel { display: none; }
+    .subject-panel.active { display: block; }
+
+    .subject-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+
+    .subject-name-input {
+        font-size: 18px;
+        font-weight: 600;
+        border: none;
+        border-bottom: 1px solid #dee2e6;
+        padding: 4px 2px;
+        background: transparent;
+        width: 280px;
+        color: #111;
+    }
+
+    .subject-name-input:focus {
+        outline: none;
+        border-bottom-color: #2563eb;
+    }
+
+    .btn-remove-subject {
+        font-size: 12px;
+        padding: 5px 10px;
+        background: #fff0f0;
+        color: #c92a2a;
+        border: 1px solid #ffc9c9;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .btn-remove-subject:hover { background: #ffe3e3; }
+
+    /* Results table */
+    .results-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+        background: #fff;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+
+    .results-table th {
+        text-align: left;
+        padding: 12px 16px;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        color: #868e96;
+        background: #f8f9fa;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .results-table td {
+        padding: 12px 16px;
+        font-size: 14px;
+        border-bottom: 1px solid #f1f3f5;
+        vertical-align: top;
+    }
+
+    .results-table tr:last-child td { border-bottom: none; }
+
+    .results-table .grade-cell {
+        font-size: 20px;
+        font-weight: 800;
+        color: #2563eb;
+        width: 60px;
+        text-align: center;
+    }
+
+    .results-table .grade-cell.ungraded { color: #adb5bd; }
+
+    .series-name-cell {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .series-name-cell input {
+        border: none;
+        border-bottom: 1px solid transparent;
+        font-size: 14px;
+        font-weight: 500;
+        padding: 2px 4px;
+        background: transparent;
+        width: 160px;
+    }
+
+    .series-name-cell input:hover { border-bottom-color: #dee2e6; }
+    .series-name-cell input:focus { outline: none; border-bottom-color: #2563eb; }
+
+    .expand-btn {
+        background: none;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        padding: 3px 8px;
+        font-size: 11px;
+        color: #495057;
+        cursor: pointer;
+    }
+
+    .expand-btn:hover { background: #f1f3f5; }
+
+    /* Expanded row */
+    .expanded-content {
+        display: none;
+        padding: 16px;
+        background: #f8f9fa;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .expanded-content.open { display: block; }
+
+    .papers-grid {
+        display: grid;
+        gap: 8px;
+        margin-bottom: 16px;
+    }
+
+    .paper-row {
+        display: grid;
+        grid-template-columns: 1fr 90px 90px 32px;
+        gap: 8px;
+        align-items: center;
+    }
+
+    .paper-row input {
+        padding: 7px 10px;
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
+        font-size: 13px;
+        width: 100%;
+    }
+
+    .paper-row input:focus {
+        outline: none;
+        border-color: #2563eb;
+        box-shadow: 0 0 0 2px rgba(37,99,235,0.1);
+    }
+
+    .paper-remove {
+        background: none;
+        border: none;
+        color: #c92a2a;
+        font-size: 16px;
+        cursor: pointer;
+        padding: 4px;
+        line-height: 1;
+    }
+
+    .paper-remove:hover { color: #a51111; }
+
+    .paper-label {
+        font-size: 11px;
+        color: #868e96;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    .boundary-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid #dee2e6;
+    }
+
+    .boundary-input {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 3px;
+    }
+
+    .boundary-input label {
+        font-size: 11px;
+        font-weight: 600;
+        color: #495057;
+    }
+
+    .boundary-input input {
+        width: 56px;
+        padding: 5px;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        font-size: 12px;
+        text-align: center;
+    }
+
+    .boundary-input input:focus {
+        outline: none;
+        border-color: #2563eb;
+    }
+
+    .btn {
+        padding: 8px 14px;
+        border: none;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background 0.15s;
+    }
+
+    .btn-primary { background: #2563eb; color: #fff; }
+    .btn-primary:hover { background: #1d4ed8; }
+
+    .btn-ghost {
+        background: none;
+        border: 1px solid #dee2e6;
+        color: #495057;
+    }
+
+    .btn-ghost:hover { background: #f1f3f5; }
+
+    .btn-sm { padding: 6px 10px; font-size: 12px; }
+
+    .add-series-btn {
+        margin-top: 4px;
+    }
+
+    .empty-msg {
+        text-align: center;
+        padding: 40px 20px;
+        color: #adb5bd;
+        font-size: 14px;
+    }
+
+    .row-actions {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+    }
+
+    .delete-series-btn {
+        background: none;
+        border: none;
+        color: #adb5bd;
+        cursor: pointer;
+        font-size: 14px;
+        padding: 4px;
+    }
+
+    .delete-series-btn:hover { color: #c92a2a; }
+
+    @media (max-width: 600px) {
+        body { padding: 12px; }
+        .paper-row { grid-template-columns: 1fr 70px 70px 28px; }
+        .results-table th, .results-table td { padding: 10px 10px; }
+        .subject-name-input { width: 180px; }
+    }
+</style>
+</head>
+<body>
+
+<div class="app">
+    <h1>Exam Results</h1>
+
+    <div class="tabs" id="tabs"></div>
+
+    <div id="panels"></div>
+</div>
+
+<script>
+const STORAGE_KEY = 'examResultsData_v2';
+
+let data = { subjects: [] };
+let activeSubjectId = null;
+let expandedSeriesId = null;
+
+/* ===== PERSISTENCE ===== */
+function save() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+function load() {
+    try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+            data = JSON.parse(raw);
+        }
+    } catch(e) {
+        data = { subjects: [] };
+    }
+    if (data.subjects.length > 0) {
+        activeSubjectId = data.subjects[0].id;
+    }
+}
+
+/* ===== ID GENERATION ===== */
+function uid() {
+    return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+}
+
+/* ===== SUBJECTS ===== */
+function addSubject() {
+    const subj = { id: uid(), name: 'New Subject', series: [] };
+    data.subjects.push(subj);
+    activeSubjectId = subj.id;
+    save();
+    render();
+}
+
+function removeSubject(id) {
+    data.subjects = data.subjects.filter(s => s.id !== id);
+    if (activeSubjectId === id) {
+        activeSubjectId = data.subjects.length > 0 ? data.subjects[0].id : null;
+    }
+    save();
+    render();
+}
+
+function renameSubject(id, name) {
+    const s = data.subjects.find(s => s.id === id);
+    if (s) { s.name = name; save(); renderTabs(); }
+}
+
+/* ===== SERIES ===== */
+function addSeries(subjId) {
+    const subj = data.subjects.find(s => s.id === subjId);
+    if (!subj) return;
+    const ser = {
+        id: uid(),
+        name: '',
+        papers: [{ id: uid(), name: 'Paper 1', marks: '', maxMarks: 100 }],
+        boundaries: {}
+    };
+    subj.series.push(ser);
+    expandedSeriesId = ser.id;
+    save();
+    render();
+}
+
+function removeSeries(subjId, serId) {
+    const subj = data.subjects.find(s => s.id === subjId);
+    if (!subj) return;
+    subj.series = subj.series.filter(s => s.id !== serId);
+    if (expandedSeriesId === serId) expandedSeriesId = null;
+    save();
+    render();
+}
+
+function renameSeries(subjId, serId, name) {
+    const subj = data.subjects.find(s => s.id === subjId);
+    if (!subj) return;
+    const ser = subj.series.find(s => s.id === serId);
+    if (ser) { ser.name = name; save(); }
+}
+
+/* ===== PAPERS ===== */
+function addPaper(subjId, serId) {
+    const subj = data.subjects.find(s => s.id === subjId);
+    if (!subj) return;
+    const ser = subj.series.find(s => s.id === serId);
+    if (!ser) return;
+    const num = ser.papers.length + 1;
+    ser.papers.push({ id: uid(), name: 'Paper ' + num, marks: '', maxMarks: 100 });
+    save();
+    render();
+}
+
+function removePaper(subjId, serId, paperId) {
+    const subj = data.subjects.find(s => s.id === subjId);
+    if (!subj) return;
+    const ser = subj.series.find(s => s.id === serId);
+    if (!ser) return;
+    ser.papers = ser.papers.filter(p => p.id !== paperId);
+    save();
+    render();
+}
+
+function updatePaper(subjId, serId, paperId, field, value) {
+    const subj = data.subjects.find(s => s.id === subjId);
+    if (!subj) return;
+    const ser = subj.series.find(s => s.id === serId);
+    if (!ser) return;
+    const paper = ser.papers.find(p => p.id === paperId);
+    if (!paper) return;
+    if (field === 'marks' || field === 'maxMarks') {
+        paper[field] = value === '' ? '' : Number(value);
+    } else {
+        paper[field] = value;
+    }
+    save();
+    renderSummary(subjId);
+}
+
+/* ===== BOUNDARIES ===== */
+function updateBoundary(subjId, serId, grade, value) {
+    const subj = data.subjects.find(s => s.id === subjId);
+    if (!subj) return;
+    const ser = subj.series.find(s => s.id === serId);
+    if (!ser) return;
+    if (value === '' || value === null) {
+        delete ser.boundaries[grade];
+    } else {
+        ser.boundaries[grade] = Number(value);
+    }
+    save();
+    renderSummary(subjId);
+}
+
+/* ===== GRADE CALCULATION ===== */
+function calcGrade(totalMarks, boundaries) {
+    // Check grades from 9 down to 1
+    for (let g = 9; g >= 1; g--) {
+        const b = boundaries[String(g)];
+        // Only consider boundaries that are actually set (not undefined/null)
+        if (b !== undefined && b !== null && totalMarks >= b) {
+            return String(g);
+        }
+    }
+    return 'U';
+}
+
+function getSeriesTotals(ser) {
+    let total = 0, max = 0;
+    let hasAnyMark = false;
+    ser.papers.forEach(p => {
+        max += (Number(p.maxMarks) || 0);
+        if (p.marks !== '' && p.marks !== null && !isNaN(Number(p.marks))) {
+            total += Number(p.marks);
+            hasAnyMark = true;
+        }
+    });
+    const pct = max > 0 ? (total / max) * 100 : 0;
+    const grade = hasAnyMark ? calcGrade(total, ser.boundaries || {}) : '—';
+    return { total, max, pct, grade, hasAnyMark };
+}
+
+/* ===== RENDER ===== */
+function render() {
+    renderTabs();
+    renderPanels();
+}
+
+function renderTabs() {
+    const el = document.getElementById('tabs');
+    let html = '';
+    data.subjects.forEach(s => {
+        const active = s.id === activeSubjectId ? ' active' : '';
+        html += `<button class="tab${active}" onclick="switchTab('${s.id}')">${esc(s.name)}</button>`;
+    });
+    html += `<button class="tab-add" onclick="addSubject()">+ Subject</button>`;
+    el.innerHTML = html;
+}
+
+function switchTab(id) {
+    activeSubjectId = id;
+    expandedSeriesId = null;
+    render();
+}
+
+function renderPanels() {
+    const el = document.getElementById('panels');
+    if (data.subjects.length === 0) {
+        el.innerHTML = `<div class="empty-msg">Add a subject to get started.</div>`;
+        return;
+    }
+    let html = '';
+    data.subjects.forEach(s => {
+        const active = s.id === activeSubjectId ? ' active' : '';
+        html += `<div class="subject-panel${active}" id="panel-${s.id}">`;
+        html += `<div class="subject-header">
+            <input class="subject-name-input" value="${esc(s.name)}"
+                   onchange="renameSubject('${s.id}', this.value)">
+            <button class="btn-remove-subject" onclick="removeSubject('${s.id}')">Remove subject</button>
+        </div>`;
+        html += renderSubjectContent(s);
+        html += `</div>`;
+    });
+    el.innerHTML = html;
+}
+
+function renderSubjectContent(subj) {
+    let html = '';
+
+    if (subj.series.length === 0) {
+        html += `<div class="empty-msg">No exam series yet. Add one below.</div>`;
+    } else {
+        html += `<table class="results-table"><thead><tr>
+            <th>Exam Series</th><th>Marks</th><th>%</th><th>Grade</th><th></th>
+        </tr></thead><tbody>`;
+
+        subj.series.forEach(ser => {
+            const t = getSeriesTotals(ser);
+            const isOpen = expandedSeriesId === ser.id;
+            html += `<tr>
+                <td><div class="series-name-cell">
+                    <input value="${esc(ser.name)}" placeholder="e.g. June 2024"
+                           onchange="renameSeries('${subj.id}','${ser.id}', this.value)">
+                    <button class="expand-btn" onclick="toggleExpand('${ser.id}')">${isOpen ? 'Hide' : 'Edit'}</button>
+                </div></td>
+                <td>${t.hasAnyMark ? t.total + ' / ' + t.max : '—'}</td>
+                <td>${t.hasAnyMark ? t.pct.toFixed(1) + '%' : '—'}</td>
+                <td class="grade-cell ${t.grade === 'U' || t.grade === '—' ? 'ungraded' : ''}">${t.grade}</td>
+                <td><div class="row-actions">
+                    <button class="delete-series-btn" onclick="removeSeries('${subj.id}','${ser.id}')" title="Delete series">✕</button>
+                </div></td>
+            </tr>`;
+
+            if (isOpen) {
+                html += `<tr><td colspan="5" style="padding:0;">
+                    <div class="expanded-content open">
+                        <div style="margin-bottom:8px;"><span class="paper-label">Papers</span></div>
+                        <div class="papers-grid">
+                            <div class="paper-row">
+                                <span class="paper-label">Name</span>
+                                <span class="paper-label">Mark</span>
+                                <span class="paper-label">Max</span>
+                                <span></span>
+                            </div>`;
+                ser.papers.forEach(p => {
+                    html += `<div class="paper-row">
+                        <input value="${esc(p.name)}" placeholder="Paper name"
+                               onchange="updatePaper('${subj.id}','${ser.id}','${p.id}','name',this.value)">
+                        <input type="number" min="0" value="${p.marks}" placeholder="0"
+                               onchange="updatePaper('${subj.id}','${ser.id}','${p.id}','marks',this.value)">
+                        <input type="number" min="0" value="${p.maxMarks}" placeholder="100"
+                               onchange="updatePaper('${subj.id}','${ser.id}','${p.id}','maxMarks',this.value)">
+                        <button class="paper-remove" onclick="removePaper('${subj.id}','${ser.id}','${p.id}')" title="Remove paper">✕</button>
+                    </div>`;
+                });
+                html += `</div>
+                        <button class="btn btn-ghost btn-sm" onclick="addPaper('${subj.id}','${ser.id}')">+ Add Paper</button>
+
+                        <div class="boundary-row">
+                            <span class="paper-label" style="width:100%;margin-bottom:4px;">Grade Boundaries (min mark for grade)</span>`;
+                for (let g = 9; g >= 1; g--) {
+                    const val = ser.boundaries && ser.boundaries[String(g)] !== undefined ? ser.boundaries[String(g)] : '';
+                    html += `<div class="boundary-input">
+                        <label>${g}</label>
+                        <input type="number" min="0" value="${val}" placeholder="—"
+                               onchange="updateBoundary('${subj.id}','${ser.id}','${g}',this.value)">
+                    </div>`;
+                }
+                html += `</div></div></td></tr>`;
+            }
+        });
+
+        html += `</tbody></table>`;
+    }
+
+    html += `<button class="btn btn-primary add-series-btn" onclick="addSeries('${subj.id}')">+ Add Exam Series</button>`;
+    return html;
+}
+
+function renderSummary(subjId) {
+    // Re-render just the panel for performance, but keep expanded state
+    renderPanels();
+}
+
+function toggleExpand(serId) {
+    expandedSeriesId = expandedSeriesId === serId ? null : serId;
+    render();
+}
+
+/* ===== UTIL ===== */
+function esc(str) {
+    return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ===== INIT ===== */
+load();
+render();
+</script>
+
+</body>
+</html>
