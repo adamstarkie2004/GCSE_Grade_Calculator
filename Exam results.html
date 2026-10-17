@@ -201,7 +201,7 @@
 
     .paper-row {
         display: grid;
-        grid-template-columns: 1fr 90px 90px 32px;
+        grid-template-columns: 1fr 90px 90px 60px 32px;
         gap: 8px;
         align-items: center;
     }
@@ -219,6 +219,15 @@
         border-color: #2563eb;
         box-shadow: 0 0 0 2px rgba(37,99,235,0.1);
     }
+
+    .paper-grade {
+        font-size: 16px;
+        font-weight: 800;
+        color: #2563eb;
+        text-align: center;
+    }
+
+    .paper-grade.ungraded { color: #adb5bd; }
 
     .paper-remove {
         background: none;
@@ -328,7 +337,7 @@
 
     @media (max-width: 600px) {
         body { padding: 12px; }
-        .paper-row { grid-template-columns: 1fr 70px 70px 28px; }
+        .paper-row { grid-template-columns: 1fr 60px 60px 44px 28px; }
         .results-table th, .results-table td { padding: 10px 10px; }
         .subject-name-input { width: 180px; }
     }
@@ -496,6 +505,14 @@ function calcGrade(totalMarks, boundaries) {
     return 'U';
 }
 
+function calcPaperGrade(paper, seriesMax, boundaries) {
+    const paperMax = Number(paper.maxMarks) || 0;
+    const hasMark = paper.marks !== '' && paper.marks !== null && !isNaN(Number(paper.marks));
+    if (!hasMark || paperMax <= 0) return '—';
+    const equivalentTotal = Number(paper.marks) * seriesMax / paperMax;
+    return calcGrade(equivalentTotal, boundaries);
+}
+
 function getSeriesTotals(ser) {
     let total = 0, max = 0;
     let hasAnyMark = false;
@@ -591,9 +608,12 @@ function renderSubjectContent(subj) {
                                 <span class="paper-label">Name</span>
                                 <span class="paper-label">Mark</span>
                                 <span class="paper-label">Max</span>
+                                <span class="paper-label" style="text-align:center;">Grade</span>
                                 <span></span>
                             </div>`;
                 ser.papers.forEach(p => {
+                    const pGrade = calcPaperGrade(p, t.max, ser.boundaries || {});
+                    const pGradeClass = pGrade === 'U' || pGrade === '—' ? ' ungraded' : '';
                     html += `<div class="paper-row">
                         <input value="${esc(p.name)}" placeholder="Paper name"
                                onchange="updatePaper('${subj.id}','${ser.id}','${p.id}','name',this.value)">
@@ -601,6 +621,7 @@ function renderSubjectContent(subj) {
                                onchange="updatePaper('${subj.id}','${ser.id}','${p.id}','marks',this.value)">
                         <input type="number" min="0" value="${p.maxMarks}" placeholder="100"
                                onchange="updatePaper('${subj.id}','${ser.id}','${p.id}','maxMarks',this.value)">
+                        <span class="paper-grade${pGradeClass}" title="Equivalent grade: this paper's percentage applied to the series boundaries">${pGrade}</span>
                         <button class="paper-remove" onclick="removePaper('${subj.id}','${ser.id}','${p.id}')" title="Remove paper">✕</button>
                     </div>`;
                 });
