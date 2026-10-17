@@ -110,6 +110,60 @@
 
     .btn-remove-subject:hover { background: #ffe3e3; }
 
+    /* Cards (papers set-up and graph) */
+    .card {
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        padding: 16px;
+        margin-bottom: 20px;
+    }
+
+    .card-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px 12px;
+        margin-bottom: 12px;
+    }
+
+    .section-title {
+        font-size: 14px;
+        font-weight: 700;
+        color: #111;
+        margin-right: 6px;
+    }
+
+    .hint {
+        font-size: 12px;
+        color: #6c757d;
+    }
+
+    .paper-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .paper-chip {
+        font-size: 12px;
+        background: #f1f3f5;
+        color: #495057;
+        border-radius: 999px;
+        padding: 4px 10px;
+    }
+
+    .paper-chip strong { font-weight: 600; color: #212529; }
+    .paper-chip.total { background: #e7f0ff; color: #1d4ed8; font-weight: 600; }
+
+    .setup-footer {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
     /* Results table */
     .results-table {
         width: 100%;
@@ -151,6 +205,12 @@
     }
 
     .results-table .grade-cell.ungraded { color: #adb5bd; }
+
+    .partial-note {
+        display: block;
+        font-size: 11px;
+        color: #868e96;
+    }
 
     .series-name-cell {
         display: flex;
@@ -196,15 +256,20 @@
     .papers-grid {
         display: grid;
         gap: 8px;
-        margin-bottom: 16px;
+        margin-bottom: 12px;
     }
 
     .paper-row {
         display: grid;
-        grid-template-columns: 1fr 90px 90px 60px 32px;
         gap: 8px;
         align-items: center;
     }
+
+    /* Papers set-up: name | max | remove */
+    .paper-row.setup-row { grid-template-columns: minmax(0, 1fr) 110px 32px; }
+
+    /* Series marks: paper | mark / max | grade */
+    .paper-row.marks-row { grid-template-columns: minmax(0, 1fr) 150px 64px; }
 
     .paper-row input {
         padding: 7px 10px;
@@ -220,14 +285,43 @@
         box-shadow: 0 0 0 2px rgba(37,99,235,0.1);
     }
 
+    /* Mark above the max (or negative) */
+    .paper-row input:invalid,
+    .boundary-input input:invalid {
+        border-color: #e03131;
+        background: #fff5f5;
+    }
+
+    .paper-name {
+        font-size: 14px;
+        font-weight: 500;
+        overflow-wrap: anywhere;
+    }
+
+    .mark-field {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .paper-row .mark-field input { width: 80px; flex: none; }
+
+    .mark-max {
+        font-size: 13px;
+        color: #6c757d;
+        white-space: nowrap;
+    }
+
     .paper-grade {
-        font-size: 16px;
+        font-size: 17px;
         font-weight: 800;
         color: #2563eb;
         text-align: center;
     }
 
     .paper-grade.ungraded { color: #adb5bd; }
+
+    .grade-col { text-align: center; }
 
     .paper-remove {
         background: none;
@@ -320,26 +414,146 @@
 
     .row-actions {
         display: flex;
-        gap: 6px;
+        gap: 2px;
         align-items: center;
+        justify-content: flex-end;
     }
 
+    .move-btn,
     .delete-series-btn {
         background: none;
         border: none;
-        color: #adb5bd;
+        color: #868e96;
         cursor: pointer;
         font-size: 14px;
         padding: 4px;
+        line-height: 1;
     }
 
+    .move-btn:hover:not(:disabled) { color: #2563eb; }
+    .move-btn:disabled { opacity: 0.3; cursor: default; }
     .delete-series-btn:hover { color: #c92a2a; }
+
+    /* Graph */
+    .chart-card { margin-top: 24px; }
+
+    .chart-switch {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-bottom: 12px;
+    }
+
+    .seg-btn {
+        padding: 6px 12px;
+        border: 1px solid #dee2e6;
+        border-radius: 999px;
+        background: #fff;
+        font-size: 13px;
+        color: #495057;
+        cursor: pointer;
+    }
+
+    .seg-btn:hover { background: #f1f3f5; }
+
+    .seg-btn.active {
+        background: #2563eb;
+        border-color: #2563eb;
+        color: #fff;
+        font-weight: 600;
+    }
+
+    .chart-scroll { overflow-x: auto; }
+    .chart-wrap { position: relative; }
+    .chart-svg { display: block; }
+
+    .chart-svg .grid { stroke: #e9ecef; stroke-width: 1; }
+    .chart-svg .axis-label { font-size: 11px; fill: #6c757d; }
+    .chart-svg .axis-title { font-size: 11px; font-weight: 600; fill: #6c757d; }
+
+    .chart-svg .boundary-line {
+        fill: none;
+        stroke: #ced4da;
+        stroke-width: 1;
+        stroke-dasharray: 4 4;
+    }
+
+    .chart-svg .boundary-label { font-size: 10px; font-weight: 600; fill: #6c757d; }
+
+    .chart-svg .marks-line {
+        fill: none;
+        stroke: #2563eb;
+        stroke-width: 2;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+    }
+
+    .chart-svg .marks-point { fill: #2563eb; stroke: #fff; stroke-width: 2; }
+    .chart-svg .marks-point.partial { fill: #fff; stroke: #2563eb; }
+
+    .chart-svg .point-mark,
+    .chart-svg .point-grade {
+        paint-order: stroke;
+        stroke: #fff;
+        stroke-width: 3px;
+        stroke-linejoin: round;
+    }
+
+    .chart-svg .point-mark { font-size: 11px; font-weight: 600; fill: #495057; }
+    .chart-svg .point-grade { font-size: 12px; font-weight: 700; fill: #2563eb; }
+
+    .chart-svg .hit { fill: transparent; cursor: pointer; outline: none; }
+    .chart-svg .hit:focus-visible { stroke: #2563eb; stroke-width: 2; }
+
+    .chart-tip {
+        position: absolute;
+        display: none;
+        pointer-events: none;
+        background: #212529;
+        color: #fff;
+        font-size: 12px;
+        line-height: 1.5;
+        padding: 8px 10px;
+        border-radius: 6px;
+        width: max-content;
+        max-width: 240px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 2;
+    }
+
+    .chart-tip .tip-note { color: #ced4da; font-style: italic; }
+
+    .chart-empty {
+        text-align: center;
+        padding: 48px 20px;
+        color: #adb5bd;
+        font-size: 14px;
+    }
+
+    .chart-legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 16px;
+        margin-top: 10px;
+        font-size: 12px;
+        color: #6c757d;
+    }
+
+    .chart-legend span { display: inline-flex; align-items: center; gap: 6px; }
+    .lg-line { width: 18px; border-top: 2px solid #2563eb; }
+    .lg-dash { width: 18px; border-top: 1px dashed #adb5bd; }
+    .lg-hollow { width: 10px; height: 10px; border-radius: 50%; border: 2px solid #2563eb; background: #fff; }
 
     @media (max-width: 600px) {
         body { padding: 12px; }
-        .paper-row { grid-template-columns: 1fr 60px 60px 44px 28px; }
+        .card { padding: 12px; }
+        .paper-row.setup-row { grid-template-columns: minmax(0, 1fr) 84px 28px; }
+        .paper-row.marks-row { grid-template-columns: minmax(0, 1fr) 124px 44px; }
+        .paper-row .mark-field input { width: 68px; }
         .results-table th, .results-table td { padding: 10px 10px; }
         .subject-name-input { width: 180px; }
+        .series-name-cell { flex-wrap: wrap; }
+        .series-name-cell input { width: 110px; }
     }
 </style>
 </head>
@@ -354,24 +568,44 @@
 </div>
 
 <script>
-const STORAGE_KEY = 'examResultsData_v2';
+const STORAGE_KEY = 'examResultsData_v3';
+const LEGACY_STORAGE_KEY = 'examResultsData_v2';   // old format: read once, then left untouched as a backup
 
 let data = { subjects: [] };
 let activeSubjectId = null;
 let expandedSeriesId = null;
 
+/* UI-only state (not saved) */
+const papersEditorOpen = {};   // subject id -> true / false
+const chartView = {};          // subject id -> 'total' or a paper id
+let chartModel = null;         // data behind the chart currently on screen (used by the tooltip)
+let lastChartWidth = 0;
+
+
 /* ===== PERSISTENCE ===== */
 function save() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    } catch (e) {
+        console.warn('Could not save exam results', e);
+    }
 }
 
 function load() {
+    data = { subjects: [] };
     try {
-        const raw = localStorage.getItem(STORAGE_KEY);
+        let raw = localStorage.getItem(STORAGE_KEY);
+        const fromLegacy = !raw;
+        if (fromLegacy) raw = localStorage.getItem(LEGACY_STORAGE_KEY);
         if (raw) {
-            data = JSON.parse(raw);
+            const parsed = JSON.parse(raw);
+            if (parsed && Array.isArray(parsed.subjects)) {
+                parsed.subjects.forEach(normaliseSubject);
+                data = parsed;
+                if (fromLegacy) save();
+            }
         }
-    } catch(e) {
+    } catch (e) {
         data = { subjects: [] };
     }
     if (data.subjects.length > 0) {
@@ -379,16 +613,93 @@ function load() {
     }
 }
 
-/* ===== ID GENERATION ===== */
+/* Older saves stored the papers (name, mark, max) inside every series.
+   Papers now live on the subject, and each series only stores its marks
+   keyed by paper id. Old papers are matched up across series by name. */
+function normaliseSubject(subj) {
+    if (!Array.isArray(subj.series)) subj.series = [];
+
+    if (!Array.isArray(subj.papers)) {
+        const papers = [];
+        const key = name => String(name || '').trim().toLowerCase();
+        subj.series.forEach(ser => {
+            const marks = {};
+            const used = {};
+            (Array.isArray(ser.papers) ? ser.papers : []).forEach(old => {
+                let paper = papers.find(p => !used[p.id] && key(p.name) === key(old.name));
+                if (!paper) {
+                    paper = { id: uid(), name: String(old.name || ''), maxMarks: toNumberOrBlank(old.maxMarks) };
+                    papers.push(paper);
+                }
+                used[paper.id] = true;
+                if (hasValue(old.marks)) marks[paper.id] = Number(old.marks);
+            });
+            ser.marks = marks;
+            delete ser.papers;
+        });
+        if (papers.length === 0) papers.push(newPaper(1));
+        subj.papers = papers;
+    }
+
+    subj.series.forEach(ser => {
+        if (!ser.marks || typeof ser.marks !== 'object') ser.marks = {};
+        if (!ser.boundaries || typeof ser.boundaries !== 'object') ser.boundaries = {};
+    });
+}
+
+
+/* ===== HELPERS ===== */
 function uid() {
     return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 }
 
+function hasValue(v) {
+    return v !== '' && v !== null && v !== undefined && !isNaN(Number(v));
+}
+
+function toNumberOrBlank(v) {
+    return hasValue(v) ? Number(v) : '';
+}
+
+function fmt(n) {
+    return String(Math.round(Number(n) * 100) / 100);
+}
+
+function round1(n) {
+    return Math.round(n * 10) / 10;
+}
+
+function getSubject(id) {
+    return data.subjects.find(s => s.id === id);
+}
+
+function getSeries(subj, serId) {
+    return subj ? subj.series.find(s => s.id === serId) : undefined;
+}
+
+function newPaper(number) {
+    return { id: uid(), name: 'Paper ' + number, maxMarks: 100 };
+}
+
+function paperLabel(paper) {
+    return String(paper.name || '').trim() || 'Untitled paper';
+}
+
+function focusEl(id, selectText) {
+    const el = document.getElementById(id);
+    if (!el || el.disabled) return false;
+    el.focus();
+    if (selectText && el.select) el.select();
+    return true;
+}
+
+
 /* ===== SUBJECTS ===== */
 function addSubject() {
-    const subj = { id: uid(), name: 'New Subject', series: [] };
+    const subj = { id: uid(), name: 'New Subject', papers: [newPaper(1)], series: [] };
     data.subjects.push(subj);
     activeSubjectId = subj.id;
+    expandedSeriesId = null;
     save();
     render();
 }
@@ -397,34 +708,92 @@ function removeSubject(id) {
     data.subjects = data.subjects.filter(s => s.id !== id);
     if (activeSubjectId === id) {
         activeSubjectId = data.subjects.length > 0 ? data.subjects[0].id : null;
+        expandedSeriesId = null;
     }
     save();
     render();
 }
 
 function renameSubject(id, name) {
-    const s = data.subjects.find(s => s.id === id);
+    const s = getSubject(id);
     if (s) { s.name = name; save(); renderTabs(); }
 }
 
-/* ===== SERIES ===== */
-function addSeries(subjId) {
-    const subj = data.subjects.find(s => s.id === subjId);
+
+/* ===== PAPERS (set once per subject, shared by every series) ===== */
+function isPapersEditorOpen(subj) {
+    const state = papersEditorOpen[subj.id];
+    return state === undefined ? subj.series.length === 0 : state;
+}
+
+function togglePapersEditor(subjId) {
+    const subj = getSubject(subjId);
     if (!subj) return;
-    const ser = {
-        id: uid(),
-        name: '',
-        papers: [{ id: uid(), name: 'Paper 1', marks: '', maxMarks: 100 }],
-        boundaries: {}
-    };
-    subj.series.push(ser);
-    expandedSeriesId = ser.id;
+    papersEditorOpen[subjId] = !isPapersEditorOpen(subj);
+    renderPapersSetup(subj);
+    focusEl('papers-toggle');
+}
+
+function addPaper(subjId) {
+    const subj = getSubject(subjId);
+    if (!subj) return;
+    const paper = newPaper(subj.papers.length + 1);
+    subj.papers.push(paper);
+    papersEditorOpen[subjId] = true;
+    save();
+    render();
+    focusEl('paper-name-' + paper.id, true);
+}
+
+function removePaper(subjId, paperId) {
+    const subj = getSubject(subjId);
+    if (!subj) return;
+    const paper = subj.papers.find(p => p.id === paperId);
+    if (!paper) return;
+
+    const usedIn = subj.series.filter(ser => hasValue(ser.marks[paperId])).length;
+    if (usedIn > 0 && !confirm(`Remove "${paperLabel(paper)}"? Marks entered for it in ${usedIn} exam series will be deleted.`)) {
+        return;
+    }
+
+    subj.papers = subj.papers.filter(p => p.id !== paperId);
+    subj.series.forEach(ser => { delete ser.marks[paperId]; });
     save();
     render();
 }
 
+function updatePaper(subjId, paperId, field, value) {
+    const subj = getSubject(subjId);
+    if (!subj) return;
+    const paper = subj.papers.find(p => p.id === paperId);
+    if (!paper) return;
+    paper[field] = field === 'maxMarks' ? toNumberOrBlank(value) : value;
+    save();
+
+    // Refresh everything that depends on the papers, but leave the editor
+    // itself alone so typing and tabbing aren't interrupted.
+    const totalEl = document.getElementById('papers-total');
+    if (totalEl) totalEl.textContent = fmt(getSubjectMax(subj));
+    renderResults(subj);
+    renderChartCard(subj);
+}
+
+
+/* ===== SERIES ===== */
+function addSeries(subjId) {
+    const subj = getSubject(subjId);
+    if (!subj) return;
+    papersEditorOpen[subjId] = isPapersEditorOpen(subj);   // keep the papers card as it is
+    const ser = { id: uid(), name: '', marks: {}, boundaries: {} };
+    subj.series.push(ser);
+    expandedSeriesId = ser.id;
+    save();
+    render();
+    focusEl('series-name-' + ser.id);
+}
+
 function removeSeries(subjId, serId) {
-    const subj = data.subjects.find(s => s.id === subjId);
+    const subj = getSubject(subjId);
     if (!subj) return;
     subj.series = subj.series.filter(s => s.id !== serId);
     if (expandedSeriesId === serId) expandedSeriesId = null;
@@ -433,100 +802,104 @@ function removeSeries(subjId, serId) {
 }
 
 function renameSeries(subjId, serId, name) {
-    const subj = data.subjects.find(s => s.id === subjId);
-    if (!subj) return;
-    const ser = subj.series.find(s => s.id === serId);
-    if (ser) { ser.name = name; save(); }
-}
-
-/* ===== PAPERS ===== */
-function addPaper(subjId, serId) {
-    const subj = data.subjects.find(s => s.id === subjId);
-    if (!subj) return;
-    const ser = subj.series.find(s => s.id === serId);
+    const subj = getSubject(subjId);
+    const ser = getSeries(subj, serId);
     if (!ser) return;
-    const num = ser.papers.length + 1;
-    ser.papers.push({ id: uid(), name: 'Paper ' + num, marks: '', maxMarks: 100 });
+    ser.name = name;
     save();
-    render();
+    renderChart(subj);
 }
 
-function removePaper(subjId, serId, paperId) {
-    const subj = data.subjects.find(s => s.id === subjId);
+function moveSeries(subjId, serId, direction) {
+    const subj = getSubject(subjId);
     if (!subj) return;
-    const ser = subj.series.find(s => s.id === serId);
-    if (!ser) return;
-    ser.papers = ser.papers.filter(p => p.id !== paperId);
+    const from = subj.series.findIndex(s => s.id === serId);
+    const to = from + direction;
+    if (from < 0 || to < 0 || to >= subj.series.length) return;
+    const moved = subj.series.splice(from, 1)[0];
+    subj.series.splice(to, 0, moved);
     save();
-    render();
+    renderResults(subj);
+    renderChart(subj);
+    // Keep keyboard focus on the button that was used (or its partner at the ends)
+    const same = direction < 0 ? 'move-up-' : 'move-down-';
+    const other = direction < 0 ? 'move-down-' : 'move-up-';
+    if (!focusEl(same + serId)) focusEl(other + serId);
 }
 
-function updatePaper(subjId, serId, paperId, field, value) {
-    const subj = data.subjects.find(s => s.id === subjId);
-    if (!subj) return;
-    const ser = subj.series.find(s => s.id === serId);
+
+/* ===== MARKS & BOUNDARIES (per series) ===== */
+function updateMark(subjId, serId, paperId, value) {
+    const subj = getSubject(subjId);
+    const ser = getSeries(subj, serId);
     if (!ser) return;
-    const paper = ser.papers.find(p => p.id === paperId);
-    if (!paper) return;
-    if (field === 'marks' || field === 'maxMarks') {
-        paper[field] = value === '' ? '' : Number(value);
-    } else {
-        paper[field] = value;
-    }
+    const v = toNumberOrBlank(value);
+    if (v === '') delete ser.marks[paperId];
+    else ser.marks[paperId] = v;
     save();
-    renderSummary(subjId);
+    refreshSeries(subj, ser);
+    renderChart(subj);
 }
 
-/* ===== BOUNDARIES ===== */
 function updateBoundary(subjId, serId, grade, value) {
-    const subj = data.subjects.find(s => s.id === subjId);
-    if (!subj) return;
-    const ser = subj.series.find(s => s.id === serId);
+    const subj = getSubject(subjId);
+    const ser = getSeries(subj, serId);
     if (!ser) return;
-    if (value === '' || value === null) {
-        delete ser.boundaries[grade];
-    } else {
-        ser.boundaries[grade] = Number(value);
-    }
+    const v = toNumberOrBlank(value);
+    if (v === '') delete ser.boundaries[grade];
+    else ser.boundaries[grade] = v;
     save();
-    renderSummary(subjId);
+    refreshSeries(subj, ser);
+    renderChart(subj);
 }
+
 
 /* ===== GRADE CALCULATION ===== */
-function calcGrade(totalMarks, boundaries) {
-    // Check grades from 9 down to 1
+/* Highest grade whose boundary is met.
+     Whole series:  calcGrade(total, boundaries)
+     Single paper:  calcGrade(mark, boundaries, paperMax, totalMax)
+   For a single paper the boundaries (which are set on the total) are scaled
+   by paperMax / totalMax. The comparison is cross-multiplied so whole-number
+   marks never hit rounding errors. */
+function calcGrade(marks, boundaries, partMax = 1, wholeMax = 1) {
+    let anySet = false;
     for (let g = 9; g >= 1; g--) {
-        const b = boundaries[String(g)];
-        // Only consider boundaries that are actually set (not undefined/null)
-        if (b !== undefined && b !== null && totalMarks >= b) {
-            return String(g);
-        }
+        const b = boundaries[g];
+        if (!hasValue(b)) continue;
+        anySet = true;
+        if (marks * wholeMax >= Number(b) * partMax) return String(g);
     }
-    return 'U';
+    return anySet ? 'U' : '—';   // no boundaries entered yet -> no grade
 }
 
-function calcPaperGrade(paper, seriesMax, boundaries) {
-    const paperMax = Number(paper.maxMarks) || 0;
-    const hasMark = paper.marks !== '' && paper.marks !== null && !isNaN(Number(paper.marks));
-    if (!hasMark || paperMax <= 0) return '—';
-    const equivalentTotal = Number(paper.marks) * seriesMax / paperMax;
-    return calcGrade(equivalentTotal, boundaries);
+function getSubjectMax(subj) {
+    return subj.papers.reduce((sum, p) => sum + (Number(p.maxMarks) || 0), 0);
 }
 
-function getSeriesTotals(ser) {
-    let total = 0, max = 0;
-    let hasAnyMark = false;
-    ser.papers.forEach(p => {
-        max += (Number(p.maxMarks) || 0);
-        if (p.marks !== '' && p.marks !== null && !isNaN(Number(p.marks))) {
-            total += Number(p.marks);
-            hasAnyMark = true;
-        }
+function getSeriesTotals(subj, ser) {
+    let total = 0, entered = 0;
+    subj.papers.forEach(p => {
+        const m = ser.marks[p.id];
+        if (hasValue(m)) { total += Number(m); entered++; }
     });
+    const max = getSubjectMax(subj);
+    const hasAnyMark = entered > 0;
     const pct = max > 0 ? (total / max) * 100 : 0;
-    const grade = hasAnyMark ? calcGrade(total, ser.boundaries || {}) : '—';
-    return { total, max, pct, grade, hasAnyMark };
+    const grade = hasAnyMark ? calcGrade(total, ser.boundaries) : '—';
+    return { total, max, pct, grade, hasAnyMark, entered, paperCount: subj.papers.length };
 }
+
+function getPaperResult(subj, ser, paper) {
+    const max = Number(paper.maxMarks) || 0;
+    const raw = ser.marks[paper.id];
+    const hasMark = hasValue(raw);
+    const mark = hasMark ? Number(raw) : null;
+    const grade = hasMark && max > 0
+        ? calcGrade(mark, ser.boundaries, max, getSubjectMax(subj))
+        : '—';
+    return { mark, max, hasMark, grade };
+}
+
 
 /* ===== RENDER ===== */
 function render() {
@@ -553,120 +926,509 @@ function switchTab(id) {
 
 function renderPanels() {
     const el = document.getElementById('panels');
-    if (data.subjects.length === 0) {
+    const subj = getSubject(activeSubjectId);
+    if (!subj) {
         el.innerHTML = `<div class="empty-msg">Add a subject to get started.</div>`;
         return;
     }
-    let html = '';
-    data.subjects.forEach(s => {
-        const active = s.id === activeSubjectId ? ' active' : '';
-        html += `<div class="subject-panel${active}" id="panel-${s.id}">`;
-        html += `<div class="subject-header">
-            <input class="subject-name-input" value="${esc(s.name)}"
-                   onchange="renameSubject('${s.id}', this.value)">
-            <button class="btn-remove-subject" onclick="removeSubject('${s.id}')">Remove subject</button>
+    el.innerHTML = `<div class="subject-panel active" id="panel-${subj.id}">
+        <div class="subject-header">
+            <input class="subject-name-input" value="${esc(subj.name)}" aria-label="Subject name"
+                   onchange="renameSubject('${subj.id}', this.value)">
+            <button class="btn-remove-subject" onclick="removeSubject('${subj.id}')">Remove subject</button>
+        </div>
+        <div id="papers-region"></div>
+        <div id="results-region"></div>
+        <button class="btn btn-primary add-series-btn" onclick="addSeries('${subj.id}')">+ Add Exam Series</button>
+        <div id="chart-region"></div>
+    </div>`;
+    renderPapersSetup(subj);
+    renderResults(subj);
+    renderChartCard(subj);
+}
+
+/* Papers card: entered once, used by every series */
+function renderPapersSetup(subj) {
+    const el = document.getElementById('papers-region');
+    if (!el) return;
+    const open = isPapersEditorOpen(subj);
+
+    let html = `<div class="card">
+        <div class="card-head">
+            <div>
+                <span class="section-title">Papers</span>
+                <span class="hint">Set up once – used by every exam series in this subject</span>
+            </div>
+            <button class="expand-btn" id="papers-toggle" onclick="togglePapersEditor('${subj.id}')">${open ? 'Done' : 'Edit papers'}</button>
         </div>`;
-        html += renderSubjectContent(s);
+
+    if (open) {
+        html += `<div class="papers-grid">`;
+        if (subj.papers.length > 0) {
+            html += `<div class="paper-row setup-row">
+                <span class="paper-label">Name</span>
+                <span class="paper-label">Max marks</span>
+                <span></span>
+            </div>`;
+        }
+        subj.papers.forEach(p => {
+            html += `<div class="paper-row setup-row">
+                <input id="paper-name-${p.id}" value="${esc(p.name)}" placeholder="Paper name" aria-label="Paper name"
+                       oninput="updatePaper('${subj.id}','${p.id}','name',this.value)">
+                <input type="number" min="0" step="any" value="${p.maxMarks}" placeholder="100" aria-label="Max marks"
+                       oninput="updatePaper('${subj.id}','${p.id}','maxMarks',this.value)">
+                <button class="paper-remove" onclick="removePaper('${subj.id}','${p.id}')" title="Remove paper" aria-label="Remove paper">✕</button>
+            </div>`;
+        });
+        html += `</div>
+        <div class="setup-footer">
+            <button class="btn btn-ghost btn-sm" onclick="addPaper('${subj.id}')">+ Add Paper</button>
+            <span class="hint">Total: <strong id="papers-total">${fmt(getSubjectMax(subj))}</strong> marks</span>
+        </div>`;
+    } else {
+        html += `<div class="paper-chips">`;
+        subj.papers.forEach(p => {
+            html += `<span class="paper-chip"><strong>${esc(paperLabel(p))}</strong> / ${fmt(Number(p.maxMarks) || 0)}</span>`;
+        });
+        html += subj.papers.length > 0
+            ? `<span class="paper-chip total">Total / ${fmt(getSubjectMax(subj))}</span>`
+            : `<span class="hint">No papers yet.</span>`;
         html += `</div>`;
-    });
+    }
+
+    html += `</div>`;
     el.innerHTML = html;
 }
 
-function renderSubjectContent(subj) {
-    let html = '';
+/* Results table (one row per series, plus the expanded editor) */
+function gradeClass(grade) {
+    return grade === 'U' || grade === '—' ? 'ungraded' : '';
+}
+
+function marksCellHtml(t) {
+    if (!t.hasAnyMark) return '—';
+    const partial = t.entered < t.paperCount
+        ? `<span class="partial-note">${t.entered} of ${t.paperCount} papers entered</span>`
+        : '';
+    return `${fmt(t.total)} / ${fmt(t.max)}${partial}`;
+}
+
+function pctText(t) {
+    return t.hasAnyMark && t.max > 0 ? t.pct.toFixed(1) + '%' : '—';
+}
+
+function renderResults(subj) {
+    const el = document.getElementById('results-region');
+    if (!el) return;
 
     if (subj.series.length === 0) {
-        html += `<div class="empty-msg">No exam series yet. Add one below.</div>`;
-    } else {
-        html += `<table class="results-table"><thead><tr>
-            <th>Exam Series</th><th>Marks</th><th>%</th><th>Grade</th><th></th>
-        </tr></thead><tbody>`;
-
-        subj.series.forEach(ser => {
-            const t = getSeriesTotals(ser);
-            const isOpen = expandedSeriesId === ser.id;
-            html += `<tr>
-                <td><div class="series-name-cell">
-                    <input value="${esc(ser.name)}" placeholder="e.g. June 2024"
-                           onchange="renameSeries('${subj.id}','${ser.id}', this.value)">
-                    <button class="expand-btn" onclick="toggleExpand('${ser.id}')">${isOpen ? 'Hide' : 'Edit'}</button>
-                </div></td>
-                <td>${t.hasAnyMark ? t.total + ' / ' + t.max : '—'}</td>
-                <td>${t.hasAnyMark ? t.pct.toFixed(1) + '%' : '—'}</td>
-                <td class="grade-cell ${t.grade === 'U' || t.grade === '—' ? 'ungraded' : ''}">${t.grade}</td>
-                <td><div class="row-actions">
-                    <button class="delete-series-btn" onclick="removeSeries('${subj.id}','${ser.id}')" title="Delete series">✕</button>
-                </div></td>
-            </tr>`;
-
-            if (isOpen) {
-                html += `<tr><td colspan="5" style="padding:0;">
-                    <div class="expanded-content open">
-                        <div style="margin-bottom:8px;"><span class="paper-label">Papers</span></div>
-                        <div class="papers-grid">
-                            <div class="paper-row">
-                                <span class="paper-label">Name</span>
-                                <span class="paper-label">Mark</span>
-                                <span class="paper-label">Max</span>
-                                <span class="paper-label" style="text-align:center;">Grade</span>
-                                <span></span>
-                            </div>`;
-                ser.papers.forEach(p => {
-                    const pGrade = calcPaperGrade(p, t.max, ser.boundaries || {});
-                    const pGradeClass = pGrade === 'U' || pGrade === '—' ? ' ungraded' : '';
-                    html += `<div class="paper-row">
-                        <input value="${esc(p.name)}" placeholder="Paper name"
-                               onchange="updatePaper('${subj.id}','${ser.id}','${p.id}','name',this.value)">
-                        <input type="number" min="0" value="${p.marks}" placeholder="0"
-                               onchange="updatePaper('${subj.id}','${ser.id}','${p.id}','marks',this.value)">
-                        <input type="number" min="0" value="${p.maxMarks}" placeholder="100"
-                               onchange="updatePaper('${subj.id}','${ser.id}','${p.id}','maxMarks',this.value)">
-                        <span class="paper-grade${pGradeClass}" title="Equivalent grade: this paper's percentage applied to the series boundaries">${pGrade}</span>
-                        <button class="paper-remove" onclick="removePaper('${subj.id}','${ser.id}','${p.id}')" title="Remove paper">✕</button>
-                    </div>`;
-                });
-                html += `</div>
-                        <button class="btn btn-ghost btn-sm" onclick="addPaper('${subj.id}','${ser.id}')">+ Add Paper</button>
-
-                        <div class="boundary-row">
-                            <span class="paper-label" style="width:100%;margin-bottom:4px;">Grade Boundaries (min mark for grade)</span>`;
-                for (let g = 9; g >= 1; g--) {
-                    const val = ser.boundaries && ser.boundaries[String(g)] !== undefined ? ser.boundaries[String(g)] : '';
-                    html += `<div class="boundary-input">
-                        <label>${g}</label>
-                        <input type="number" min="0" value="${val}" placeholder="—"
-                               onchange="updateBoundary('${subj.id}','${ser.id}','${g}',this.value)">
-                    </div>`;
-                }
-                html += `</div></div></td></tr>`;
-            }
-        });
-
-        html += `</tbody></table>`;
+        el.innerHTML = `<div class="empty-msg">No exam series yet. Add one below.</div>`;
+        return;
     }
 
-    html += `<button class="btn btn-primary add-series-btn" onclick="addSeries('${subj.id}')">+ Add Exam Series</button>`;
+    let html = `<table class="results-table"><thead><tr>
+        <th>Exam Series</th><th>Marks</th><th>%</th><th>Grade</th><th></th>
+    </tr></thead><tbody>`;
+
+    const lastIndex = subj.series.length - 1;
+    subj.series.forEach((ser, i) => {
+        const t = getSeriesTotals(subj, ser);
+        const isOpen = expandedSeriesId === ser.id;
+        html += `<tr>
+            <td><div class="series-name-cell">
+                <input id="series-name-${ser.id}" value="${esc(ser.name)}" placeholder="e.g. June 2024" aria-label="Exam series name"
+                       oninput="renameSeries('${subj.id}','${ser.id}', this.value)">
+                <button class="expand-btn" id="expand-${ser.id}" onclick="toggleExpand('${ser.id}')">${isOpen ? 'Hide' : 'Edit'}</button>
+            </div></td>
+            <td id="sum-marks-${ser.id}">${marksCellHtml(t)}</td>
+            <td id="sum-pct-${ser.id}">${pctText(t)}</td>
+            <td class="grade-cell ${gradeClass(t.grade)}" id="sum-grade-${ser.id}">${t.grade}</td>
+            <td><div class="row-actions">
+                <button class="move-btn" id="move-up-${ser.id}" onclick="moveSeries('${subj.id}','${ser.id}',-1)"
+                        title="Move earlier" aria-label="Move series earlier"${i === 0 ? ' disabled' : ''}>↑</button>
+                <button class="move-btn" id="move-down-${ser.id}" onclick="moveSeries('${subj.id}','${ser.id}',1)"
+                        title="Move later" aria-label="Move series later"${i === lastIndex ? ' disabled' : ''}>↓</button>
+                <button class="delete-series-btn" onclick="removeSeries('${subj.id}','${ser.id}')" title="Delete series" aria-label="Delete series">✕</button>
+            </div></td>
+        </tr>`;
+
+        if (isOpen) html += renderSeriesEditor(subj, ser);
+    });
+
+    html += `</tbody></table>`;
+    el.innerHTML = html;
+}
+
+function renderSeriesEditor(subj, ser) {
+    let html = `<tr><td colspan="5" style="padding:0;">
+        <div class="expanded-content open">`;
+
+    if (subj.papers.length === 0) {
+        html += `<p class="hint">No papers set up yet – add them in the Papers section above.</p>`;
+    } else {
+        html += `<div class="papers-grid">
+            <div class="paper-row marks-row">
+                <span class="paper-label">Paper</span>
+                <span class="paper-label">Mark</span>
+                <span class="paper-label grade-col">Grade</span>
+            </div>`;
+        subj.papers.forEach(p => {
+            const r = getPaperResult(subj, ser, p);
+            html += `<div class="paper-row marks-row">
+                <span class="paper-name">${esc(paperLabel(p))}</span>
+                <div class="mark-field">
+                    <input type="number" min="0" max="${p.maxMarks}" step="any" value="${r.hasMark ? r.mark : ''}" placeholder="–"
+                           aria-label="Mark for ${esc(paperLabel(p))}"
+                           oninput="updateMark('${subj.id}','${ser.id}','${p.id}',this.value)">
+                    <span class="mark-max">/ ${fmt(r.max)}</span>
+                </div>
+                <span class="paper-grade ${gradeClass(r.grade)}" id="pgrade-${ser.id}-${p.id}">${r.grade}</span>
+            </div>`;
+        });
+        html += `</div>
+            <p class="hint">Paper grades use this series' boundaries scaled to each paper's max mark – the grade you'd get overall with the same percentage on every paper.</p>`;
+    }
+
+    html += `<div class="boundary-row">
+        <span class="paper-label" style="width:100%;margin-bottom:4px;">Grade Boundaries (min total mark for grade)</span>`;
+    for (let g = 9; g >= 1; g--) {
+        const val = hasValue(ser.boundaries[g]) ? ser.boundaries[g] : '';
+        html += `<div class="boundary-input">
+            <label for="boundary-${ser.id}-${g}">${g}</label>
+            <input type="number" min="0" step="any" id="boundary-${ser.id}-${g}" value="${val}" placeholder="—"
+                   oninput="updateBoundary('${subj.id}','${ser.id}','${g}',this.value)">
+        </div>`;
+    }
+    html += `</div></div></td></tr>`;
     return html;
 }
 
-function renderSummary(subjId) {
-    // Re-render just the panel for performance, but keep expanded state
-    renderPanels();
+/* Update one series' totals and paper grades in place, so the input being
+   typed in keeps focus (no full re-render while entering marks). */
+function refreshSeries(subj, ser) {
+    const t = getSeriesTotals(subj, ser);
+
+    const marksEl = document.getElementById('sum-marks-' + ser.id);
+    if (marksEl) marksEl.innerHTML = marksCellHtml(t);
+
+    const pctEl = document.getElementById('sum-pct-' + ser.id);
+    if (pctEl) pctEl.textContent = pctText(t);
+
+    const gradeEl = document.getElementById('sum-grade-' + ser.id);
+    if (gradeEl) {
+        gradeEl.textContent = t.grade;
+        gradeEl.className = 'grade-cell ' + gradeClass(t.grade);
+    }
+
+    subj.papers.forEach(p => {
+        const el = document.getElementById('pgrade-' + ser.id + '-' + p.id);
+        if (!el) return;
+        const r = getPaperResult(subj, ser, p);
+        el.textContent = r.grade;
+        el.className = 'paper-grade ' + gradeClass(r.grade);
+    });
 }
 
 function toggleExpand(serId) {
     expandedSeriesId = expandedSeriesId === serId ? null : serId;
-    render();
+    const subj = getSubject(activeSubjectId);
+    if (subj) renderResults(subj);
+    focusEl('expand-' + serId);
 }
+
+
+/* ===== GRAPH ===== */
+const CHART = { height: 320, top: 44, right: 40, bottom: 44, left: 46, minSlot: 72 };
+
+function getChartView(subj) {
+    const v = chartView[subj.id];
+    return v && subj.papers.some(p => p.id === v) ? v : 'total';
+}
+
+function setChartView(subjId, view) {
+    const subj = getSubject(subjId);
+    if (!subj) return;
+    chartView[subjId] = view;
+    const current = getChartView(subj);
+    document.querySelectorAll('#chart-region .seg-btn').forEach(btn => {
+        const on = btn.dataset.view === current;
+        btn.classList.toggle('active', on);
+        btn.setAttribute('aria-pressed', String(on));
+    });
+    renderChart(subj);
+}
+
+function renderChartCard(subj) {
+    const el = document.getElementById('chart-region');
+    if (!el) return;
+    const view = getChartView(subj);
+    const segBtn = (id, label) =>
+        `<button class="seg-btn${view === id ? ' active' : ''}" data-view="${id}" aria-pressed="${view === id}"
+                 onclick="setChartView('${subj.id}','${id}')">${esc(label)}</button>`;
+
+    el.innerHTML = `<div class="card chart-card">
+        <div class="card-head">
+            <div>
+                <span class="section-title">Progress</span>
+                <span class="hint">Marks for each exam series, labelled with the grade</span>
+            </div>
+        </div>
+        <div class="chart-switch" role="group" aria-label="Show on graph">
+            ${segBtn('total', 'Total')}${subj.papers.map(p => segBtn(p.id, paperLabel(p))).join('')}
+        </div>
+        <div class="chart-scroll" id="chart-scroll"><div class="chart-wrap" id="chart"></div></div>
+        <div class="chart-legend" id="chart-legend"></div>
+    </div>`;
+
+    renderChart(subj);
+
+    // If there are more series than fit, start at the most recent one
+    const scroller = document.getElementById('chart-scroll');
+    scroller.scrollLeft = scroller.scrollWidth;
+}
+
+/* Works out what the graph should show for the selected view */
+function buildChartModel(subj) {
+    const view = getChartView(subj);
+    const paper = view === 'total' ? null : subj.papers.find(p => p.id === view);
+    const totalMax = getSubjectMax(subj);
+    const max = paper ? (Number(paper.maxMarks) || 0) : totalMax;
+    // Boundaries are set on the total, so scale them when showing one paper
+    const scale = totalMax > 0 ? max / totalMax : 0;
+
+    const points = subj.series.map((ser, index) => {
+        const label = String(ser.name || '').trim() || 'Series ' + (index + 1);
+        let mark = null, grade = '—', note = '';
+
+        if (paper) {
+            const r = getPaperResult(subj, ser, paper);
+            if (r.hasMark) { mark = r.mark; grade = r.grade; }
+        } else {
+            const t = getSeriesTotals(subj, ser);
+            if (t.hasAnyMark) {
+                mark = t.total;
+                grade = t.grade;
+                if (t.entered < t.paperCount) note = `${t.entered} of ${t.paperCount} papers entered`;
+            }
+        }
+
+        const bounds = {};
+        if (scale > 0) {
+            for (let g = 1; g <= 9; g++) {
+                if (hasValue(ser.boundaries[g])) bounds[g] = Number(ser.boundaries[g]) * scale;
+            }
+        }
+        return { index, label, mark, grade, note, bounds };
+    });
+
+    return { title: paper ? paperLabel(paper) : 'Total', isPaper: !!paper, max, points };
+}
+
+function renderChart(subj) {
+    const wrap = document.getElementById('chart');
+    const scroller = document.getElementById('chart-scroll');
+    const legend = document.getElementById('chart-legend');
+    if (!wrap || !scroller || !legend) return;
+
+    const available = Math.floor(scroller.getBoundingClientRect().width) || 640;
+    lastChartWidth = available;
+
+    const model = chartModel = buildChartModel(subj);
+    const n = model.points.length;
+    const plotted = model.points.filter(p => p.mark !== null);
+
+    if (plotted.length === 0) {
+        const msg = n === 0
+            ? 'Add an exam series to start tracking your marks.'
+            : (model.isPaper ? `No marks entered for ${esc(model.title)} yet.` : 'No marks entered yet.');
+        wrap.style.width = '';
+        wrap.innerHTML = `<div class="chart-empty">${msg}</div>`;
+        legend.innerHTML = '';
+        return;
+    }
+
+    const C = CHART;
+    const W = Math.max(available, C.left + C.right + n * C.minSlot);
+    const H = C.height;
+    const plotW = W - C.left - C.right;
+    const plotH = H - C.top - C.bottom;
+    const slot = plotW / n;
+    const yMax = Math.max(model.max, 1, ...plotted.map(p => p.mark));
+    const xAt = i => round1(C.left + slot * (i + 0.5));
+    const yAt = v => round1(C.top + plotH * (1 - v / yMax));
+
+    let deco = '';   // everything visual; the focusable points are added separately
+
+    /* Marks axis and gridlines */
+    const step = niceStep(yMax);
+    const ticks = [];
+    for (let k = 0; k * step <= yMax + 1e-9; k++) ticks.push(k * step);
+    const lastTick = ticks[ticks.length - 1];
+    if (yMax - lastTick > 1e-9 && yAt(lastTick) - yAt(yMax) >= 14) ticks.push(yMax);
+    ticks.forEach(v => {
+        const ty = yAt(v);
+        deco += `<line class="grid" x1="${C.left}" x2="${W - C.right}" y1="${ty}" y2="${ty}"/>`
+              + `<text class="axis-label" x="${C.left - 8}" y="${ty}" dy="0.32em" text-anchor="end">${fmt(v)}</text>`;
+    });
+    deco += `<text class="axis-title" x="${C.left - 8}" y="16" text-anchor="end">Marks</text>`;
+
+    /* Grade boundary guide lines (one per grade, following each series' boundaries) */
+    const boundaryLabels = [];
+    for (let g = 9; g >= 1; g--) {
+        let run = [];
+        const flush = () => {
+            if (run.length === 0) return;
+            const first = run[0], last = run[run.length - 1];
+            const startX = round1(first.x - slot / 2);
+            const endX = round1(last.x + slot / 2);
+            const d = `M${startX},${first.y} ` + run.map(pt => `L${pt.x},${pt.y}`).join(' ') + ` L${endX},${last.y}`;
+            deco += `<path class="boundary-line" d="${d}"/>`;
+            boundaryLabels.push({ x: endX + 5, y: last.y, grade: g });
+            run = [];
+        };
+        model.points.forEach((p, i) => {
+            const b = p.bounds[g];
+            if (b !== undefined && b >= 0 && b <= yMax) run.push({ x: xAt(i), y: yAt(b) });
+            else flush();
+        });
+        flush();
+    }
+    boundaryLabels.sort((a, b) => a.x - b.x || a.y - b.y);
+    let prevLabel = null;
+    boundaryLabels.forEach(l => {
+        if (prevLabel && prevLabel.x === l.x && l.y - prevLabel.y < 11) return;   // skip labels that would overlap
+        deco += `<text class="boundary-label" x="${l.x}" y="${l.y}" dy="0.32em">${l.grade}</text>`;
+        prevLabel = l;
+    });
+    if (boundaryLabels.length > 0) {
+        deco += `<text class="axis-title" x="${W - 6}" y="16" text-anchor="end">Grade</text>`;
+    }
+
+    /* Exam series along the bottom */
+    const maxChars = Math.max(4, Math.floor((slot - 8) / 6.2));
+    model.points.forEach((p, i) => {
+        wrapLabel(p.label, maxChars).forEach((line, k) => {
+            deco += `<text class="axis-label" x="${xAt(i)}" y="${H - C.bottom + 18 + k * 13}" text-anchor="middle">${esc(line)}</text>`;
+        });
+    });
+
+    /* Marks line, points and their labels */
+    plotted.forEach(p => {
+        p.cx = xAt(p.index);
+        p.cy = yAt(p.mark);
+    });
+    if (plotted.length > 1) {
+        deco += `<polyline class="marks-line" points="${plotted.map(p => p.cx + ',' + p.cy).join(' ')}"/>`;
+    }
+    let hits = '';
+    plotted.forEach(p => {
+        const hasGrade = p.grade !== '—';
+        deco += `<circle class="marks-point${p.note ? ' partial' : ''}" cx="${p.cx}" cy="${p.cy}" r="5"/>`
+              + `<text class="point-mark" x="${p.cx}" y="${p.cy - 11}" text-anchor="middle">${fmt(p.mark)}</text>`;
+        if (hasGrade) {
+            deco += `<text class="point-grade" x="${p.cx}" y="${p.cy - 25}" text-anchor="middle">Grade ${p.grade}</text>`;
+        }
+        const aria = `${p.label}: ${fmt(p.mark)} out of ${fmt(model.max)}`
+            + (hasGrade ? `, grade ${p.grade}` : '')
+            + (p.note ? ` (${p.note})` : '');
+        hits += `<circle class="hit" cx="${p.cx}" cy="${p.cy}" r="16" tabindex="0" role="img" aria-label="${esc(aria)}"
+                    onmouseenter="showChartTip(${p.index})" onmouseleave="hideChartTip()"
+                    onfocus="showChartTip(${p.index})" onblur="hideChartTip()"
+                    onclick="showChartTip(${p.index}); event.stopPropagation()"/>`;
+    });
+
+    wrap.style.width = W + 'px';
+    wrap.innerHTML = `<svg class="chart-svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="group"
+        aria-label="${esc(model.title)} marks by exam series" onclick="hideChartTip()">
+        <g aria-hidden="true">${deco}</g>${hits}</svg>`;
+
+    legend.innerHTML =
+        `<span><i class="lg-line"></i>${esc(model.title)} marks</span>`
+        + (boundaryLabels.length > 0
+            ? `<span><i class="lg-dash"></i>Grade boundaries${model.isPaper ? ' (scaled to this paper)' : ''}</span>`
+            : `<span>Add grade boundaries to a series to see its grade here</span>`)
+        + (plotted.some(p => p.note) ? `<span><i class="lg-hollow"></i>Not all papers entered</span>` : '');
+}
+
+function showChartTip(index) {
+    const wrap = document.getElementById('chart');
+    const scroller = document.getElementById('chart-scroll');
+    const p = chartModel && chartModel.points[index];
+    if (!wrap || !scroller || !p || p.mark === null) return;
+
+    let tip = document.getElementById('chart-tip');
+    if (!tip) {
+        tip = document.createElement('div');
+        tip.id = 'chart-tip';
+        tip.className = 'chart-tip';
+        wrap.appendChild(tip);
+    }
+
+    const max = chartModel.max;
+    const pct = max > 0 ? ` (${(p.mark / max * 100).toFixed(1)}%)` : '';
+    tip.innerHTML = `<strong>${esc(p.label)}</strong>
+        <div>${esc(chartModel.title)}: ${fmt(p.mark)} / ${fmt(max)}${pct}</div>
+        <div>${chartModel.isPaper ? 'Equivalent grade' : 'Grade'}: ${p.grade === '—' ? 'no boundaries set' : p.grade}</div>
+        ${p.note ? `<div class="tip-note">${esc(p.note)}</div>` : ''}`;
+    tip.style.display = 'block';
+
+    // Keep the tooltip inside the visible part of the chart
+    const tw = tip.offsetWidth, th = tip.offsetHeight;
+    const minLeft = scroller.scrollLeft + 4;
+    const maxLeft = scroller.scrollLeft + scroller.clientWidth - tw - 4;
+    tip.style.left = Math.max(minLeft, Math.min(maxLeft, p.cx - tw / 2)) + 'px';
+    tip.style.top = (p.cy - th - 14 >= 0 ? p.cy - th - 14 : p.cy + 14) + 'px';
+}
+
+function hideChartTip() {
+    const tip = document.getElementById('chart-tip');
+    if (tip) tip.style.display = 'none';
+}
+
+/* Gridline spacing: prefer a step that lands exactly on the max mark */
+function niceStep(max) {
+    const exact = s => max % s === 0 && max / s >= 3 && max / s <= 6;
+    const nice = [1, 2, 5, 10, 20, 25, 50, 100, 200, 250, 500, 1000];
+    const alt = [4, 40, 400];
+    return nice.find(exact) || alt.find(exact) || nice.find(s => max / s <= 6) || Math.ceil(max / 5);
+}
+
+/* Splits a series name over at most two lines to fit under its point */
+function wrapLabel(text, maxChars) {
+    if (text.length <= maxChars) return [text];
+    let cut = text.lastIndexOf(' ', maxChars);
+    if (cut < 1) cut = maxChars;
+    const first = text.slice(0, cut).trim();
+    let second = text.slice(cut).trim();
+    if (second.length > maxChars) second = second.slice(0, Math.max(1, maxChars - 1)).trim() + '…';
+    return [first, second];
+}
+
+/* Redraw the graph when the space available to it changes */
+function handleResize() {
+    const scroller = document.getElementById('chart-scroll');
+    const subj = getSubject(activeSubjectId);
+    if (!scroller || !subj) return;
+    if (Math.floor(scroller.getBoundingClientRect().width) !== lastChartWidth) renderChart(subj);
+}
+
 
 /* ===== UTIL ===== */
 function esc(str) {
-    return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    return String(str === null || str === undefined ? '' : str)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
+
 
 /* ===== INIT ===== */
 load();
 render();
+
+if (window.ResizeObserver) {
+    new ResizeObserver(handleResize).observe(document.getElementById('panels'));
+} else {
+    window.addEventListener('resize', handleResize);
+}
 </script>
 
 </body>
