@@ -157,7 +157,23 @@
 
     .view-chip.active span { color: #e7f0ff; }
 
-    .view-bar .expand-btn { flex: none; white-space: nowrap; }
+    .view-actions {
+        display: flex;
+        gap: 6px;
+        flex: none;
+    }
+
+    .view-actions .expand-btn { white-space: nowrap; }
+
+    /* On/off button (used for the +/− grades switch) */
+    .toggle-btn.on {
+        border-color: #2563eb;
+        color: #2563eb;
+        background: #e7f0ff;
+        font-weight: 600;
+    }
+
+    .toggle-btn.on:hover { background: #dbe7ff; }
 
     /* Cards (papers editor and graph) */
     .card {
@@ -188,22 +204,28 @@
         text-align: left;
         padding: 12px 16px;
         font-size: 12px;
-        font-weight: 600;
+        font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.4px;
-        color: #868e96;
-        background: #f8f9fa;
-        border-bottom: 1px solid #e9ecef;
+        color: #1e3a8a;
+        background: #dbe7ff;
+        border-bottom: 2px solid #2563eb;
     }
 
     .results-table td {
         padding: 12px 16px;
         font-size: 14px;
-        border-bottom: 1px solid #f1f3f5;
+        border-bottom: 1px solid #e9ecef;
         vertical-align: top;
     }
 
     .results-table tr:last-child td { border-bottom: none; }
+
+    /* Every other series (and its editor, when open) is lightly shaded */
+    .results-table tr.alt > td { background: #f3f6fa; }
+
+    /* An open series and its editor read as one block */
+    .results-table tr.open > td { border-bottom: none; }
 
     .results-table .grade-cell {
         font-size: 20px;
@@ -255,9 +277,7 @@
     /* Expanded row */
     .expanded-content {
         display: none;
-        padding: 16px;
-        background: #f8f9fa;
-        border-bottom: 1px solid #e9ecef;
+        padding: 4px 16px 16px;
     }
 
     .expanded-content.open { display: block; }
@@ -277,8 +297,8 @@
     /* Papers editor: name | max | remove */
     .paper-row.setup-row { grid-template-columns: minmax(0, 1fr) 110px 32px; }
 
-    /* Series marks: paper | mark / max | grade */
-    .paper-row.marks-row { grid-template-columns: minmax(0, 1fr) 150px 64px; }
+    /* Series marks: paper | mark / max | grade | note */
+    .paper-row.marks-row { grid-template-columns: minmax(0, 1fr) 150px 64px minmax(0, 2fr); }
 
     .paper-row input {
         padding: 7px 10px;
@@ -286,6 +306,7 @@
         border-radius: 5px;
         font-size: 13px;
         width: 100%;
+        background: #fff;
     }
 
     .paper-row input:focus {
@@ -380,6 +401,7 @@
         border-radius: 4px;
         font-size: 12px;
         text-align: center;
+        background: #fff;
     }
 
     .boundary-input input:focus {
@@ -446,7 +468,6 @@
     /* Graph */
     .chart-card { margin-top: 24px; }
     .chart-scroll { overflow-x: auto; }
-    .chart-wrap { position: relative; }
     .chart-svg { display: block; }
 
     .chart-svg .grid { stroke: #e9ecef; stroke-width: 1; }
@@ -487,8 +508,9 @@
     .chart-svg .hit { fill: transparent; cursor: pointer; outline: none; }
     .chart-svg .hit:focus-visible { stroke: #2563eb; stroke-width: 2; }
 
+    /* Tooltip floats above the page so long notes are never clipped by the graph */
     .chart-tip {
-        position: absolute;
+        position: fixed;
         display: none;
         pointer-events: none;
         background: #212529;
@@ -498,12 +520,19 @@
         padding: 8px 10px;
         border-radius: 6px;
         width: max-content;
-        max-width: 240px;
+        max-width: 260px;
+        overflow-wrap: anywhere;
         box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        z-index: 2;
+        z-index: 20;
     }
 
-    .chart-tip .tip-note { color: #ced4da; font-style: italic; }
+    .chart-tip .tip-partial { color: #ced4da; font-style: italic; }
+
+    .chart-tip .tip-notes {
+        margin-top: 6px;
+        padding-top: 6px;
+        border-top: 1px solid rgba(255,255,255,0.2);
+    }
 
     .chart-empty {
         display: flex;
@@ -518,8 +547,11 @@
         body { padding: 12px; }
         .card { padding: 12px; }
         .view-bar { align-items: flex-start; }
+        .view-actions { flex-direction: column; }
         .paper-row.setup-row { grid-template-columns: minmax(0, 1fr) 84px 28px; }
         .paper-row.marks-row { grid-template-columns: minmax(0, 1fr) 124px 44px; }
+        .paper-row.marks-row .note-input { grid-column: 1 / -1; }   /* note drops onto its own line */
+        .paper-row.marks-row .note-col { display: none; }
         .paper-row .mark-field input { width: 68px; }
         .results-table th, .results-table td { padding: 10px 10px; }
         .subject-name-input { width: 180px; }
@@ -542,7 +574,7 @@
 const STORAGE_KEY = 'examResultsData_v3';
 const LEGACY_STORAGE_KEY = 'examResultsData_v2';   // old format: read once, then left untouched as a backup
 
-let data = { subjects: [] };
+let data = { subjects: [], settings: { plusMinus: true } };
 let activeSubjectId = null;
 let expandedSeriesId = null;
 
@@ -566,6 +598,7 @@ function save() {
 
 function load() {
     data = { subjects: [] };
+    let migrated = false;
     try {
         let raw = localStorage.getItem(STORAGE_KEY);
         const fromLegacy = !raw;
@@ -575,12 +608,17 @@ function load() {
             if (parsed && Array.isArray(parsed.subjects)) {
                 parsed.subjects.forEach(normaliseSubject);
                 data = parsed;
-                if (fromLegacy) save();
+                migrated = fromLegacy;
             }
         }
     } catch (e) {
         data = { subjects: [] };
     }
+
+    if (!data.settings || typeof data.settings !== 'object') data.settings = {};
+    if (typeof data.settings.plusMinus !== 'boolean') data.settings.plusMinus = true;
+
+    if (migrated) save();
     if (data.subjects.length > 0) {
         activeSubjectId = data.subjects[0].id;
     }
@@ -588,7 +626,7 @@ function load() {
 
 /* Older saves stored the papers (name, mark, max) inside every series.
    Papers now live on the subject, and each series only stores its marks
-   keyed by paper id. Old papers are matched up across series by name. */
+   (and notes) keyed by paper id. Old papers are matched up across series by name. */
 function normaliseSubject(subj) {
     if (!Array.isArray(subj.series)) subj.series = [];
 
@@ -616,6 +654,7 @@ function normaliseSubject(subj) {
 
     subj.series.forEach(ser => {
         if (!ser.marks || typeof ser.marks !== 'object') ser.marks = {};
+        if (!ser.notes || typeof ser.notes !== 'object') ser.notes = {};
         if (!ser.boundaries || typeof ser.boundaries !== 'object') ser.boundaries = {};
     });
 }
@@ -718,6 +757,23 @@ function setView(subjId, view) {
     renderChart(subj, true);   // animate from the old view to the new one
 }
 
+/* Switches the + / − grade suffixes on or off everywhere */
+function togglePlusMinus() {
+    data.settings.plusMinus = !data.settings.plusMinus;
+    save();
+
+    const btn = document.getElementById('plusminus-toggle');
+    if (btn) {
+        btn.classList.toggle('on', data.settings.plusMinus);
+        btn.setAttribute('aria-pressed', String(data.settings.plusMinus));
+    }
+
+    const subj = getSubject(activeSubjectId);
+    if (!subj) return;
+    subj.series.forEach(ser => refreshSeries(subj, ser));
+    renderChart(subj);
+}
+
 
 /* ===== PAPERS (set once per subject, shared by every series) ===== */
 function isPapersEditorOpen(subj) {
@@ -749,13 +805,16 @@ function removePaper(subjId, paperId) {
     const paper = subj.papers.find(p => p.id === paperId);
     if (!paper) return;
 
-    const usedIn = subj.series.filter(ser => hasValue(ser.marks[paperId])).length;
-    if (usedIn > 0 && !confirm(`Remove "${paperLabel(paper)}"? Marks entered for it in ${usedIn} exam series will be deleted.`)) {
+    const usedIn = subj.series.filter(ser => hasValue(ser.marks[paperId]) || ser.notes[paperId]).length;
+    if (usedIn > 0 && !confirm(`Remove "${paperLabel(paper)}"? Its marks and notes in ${usedIn} exam series will be deleted.`)) {
         return;
     }
 
     subj.papers = subj.papers.filter(p => p.id !== paperId);
-    subj.series.forEach(ser => { delete ser.marks[paperId]; });
+    subj.series.forEach(ser => {
+        delete ser.marks[paperId];
+        delete ser.notes[paperId];
+    });
     save();
     render();
 }
@@ -781,7 +840,7 @@ function addSeries(subjId) {
     const subj = getSubject(subjId);
     if (!subj) return;
     papersEditorOpen[subjId] = isPapersEditorOpen(subj);   // keep the papers editor as it is
-    const ser = { id: uid(), name: '', marks: {}, boundaries: {} };
+    const ser = { id: uid(), name: '', marks: {}, notes: {}, boundaries: {} };
     subj.series.push(ser);
     expandedSeriesId = ser.id;
     save();
@@ -825,7 +884,7 @@ function moveSeries(subjId, serId, direction) {
 }
 
 
-/* ===== MARKS & BOUNDARIES (per series) ===== */
+/* ===== MARKS, NOTES & BOUNDARIES (per series) ===== */
 function updateMark(subjId, serId, paperId, value) {
     const subj = getSubject(subjId);
     const ser = getSeries(subj, serId);
@@ -836,6 +895,16 @@ function updateMark(subjId, serId, paperId, value) {
     save();
     refreshSeries(subj, ser);
     renderChart(subj);
+}
+
+function updateNote(subjId, serId, paperId, value) {
+    const subj = getSubject(subjId);
+    const ser = getSeries(subj, serId);
+    if (!ser) return;
+    if (value.trim() === '') delete ser.notes[paperId];
+    else ser.notes[paperId] = value;
+    save();
+    renderChart(subj);   // the graph tooltips show the notes
 }
 
 function updateBoundary(subjId, serId, grade, value) {
@@ -852,21 +921,41 @@ function updateBoundary(subjId, serId, grade, value) {
 
 
 /* ===== GRADE CALCULATION ===== */
-/* Highest grade whose boundary is met.
-     Whole series:  calcGrade(total, boundaries)
-     Single paper:  calcGrade(mark, boundaries, paperMax, totalMax)
+/* Highest grade whose boundary is met, with an optional + / − suffix.
+     Whole series:  calcGrade(total, boundaries, totalMax)
+     Single paper:  calcGrade(mark, boundaries, totalMax, paperMax)
    For a single paper the boundaries (which are set on the total) are scaled
-   by paperMax / totalMax. The comparison is cross-multiplied so whole-number
-   marks never hit rounding errors. */
-function calcGrade(marks, boundaries, partMax = 1, wholeMax = 1) {
+   by paperMax / totalMax. Everything is compared cross-multiplied so
+   whole-number marks never hit rounding errors. */
+function calcGrade(marks, boundaries, totalMax, paperMax) {
+    const isPaper = paperMax !== undefined;
+    const P = isPaper ? paperMax : 1;     // boundaries are multiplied by this...
+    const W = isPaper ? totalMax : 1;     // ...and marks by this, putting both on one scale
+    const value = marks * W;
+
+    let upper = totalMax * P;             // the top grade's band runs up to full marks
     let anySet = false;
     for (let g = 9; g >= 1; g--) {
         const b = boundaries[g];
         if (!hasValue(b)) continue;
         anySet = true;
-        if (marks * wholeMax >= Number(b) * partMax) return String(g);
+        const lower = Number(b) * P;
+        if (value >= lower) {
+            return String(g) + (data.settings.plusMinus ? gradeModifier(value, lower, upper) : '');
+        }
+        upper = lower;                    // next grade down ends where this one starts
     }
-    return anySet ? 'U' : '—';   // no boundaries entered yet -> no grade
+    return anySet ? 'U' : '—';            // no boundaries entered yet -> no grade
+}
+
+/* '+' in the top 30% of a grade's band of marks, '−' in the bottom 30% */
+function gradeModifier(value, lower, upper) {
+    const width = upper - lower;
+    if (!(width > 0)) return '';
+    const position = (value - lower) * 10;
+    if (position >= width * 7) return '+';
+    if (position < width * 3) return '−';
+    return '';
 }
 
 function getSubjectMax(subj) {
@@ -879,9 +968,10 @@ function getSeriesTotals(subj, ser) {
         const m = ser.marks[p.id];
         if (hasValue(m)) { total += Number(m); entered++; }
     });
+    const max = getSubjectMax(subj);
     const hasAnyMark = entered > 0;
-    const grade = hasAnyMark ? calcGrade(total, ser.boundaries) : '—';
-    return { total, max: getSubjectMax(subj), grade, hasAnyMark, entered, paperCount: subj.papers.length };
+    const grade = hasAnyMark ? calcGrade(total, ser.boundaries, max) : '—';
+    return { total, max, grade, hasAnyMark, entered, paperCount: subj.papers.length };
 }
 
 function getPaperResult(subj, ser, paper) {
@@ -890,7 +980,7 @@ function getPaperResult(subj, ser, paper) {
     const hasMark = hasValue(raw);
     const mark = hasMark ? Number(raw) : null;
     const grade = hasMark && max > 0
-        ? calcGrade(mark, ser.boundaries, max, getSubjectMax(subj))
+        ? calcGrade(mark, ser.boundaries, getSubjectMax(subj), max)
         : '—';
     return { mark, max, hasMark, grade };
 }
@@ -900,7 +990,7 @@ function getSeriesSummary(subj, ser, view) {
     const paper = view === 'total' ? null : subj.papers.find(p => p.id === view);
     if (paper) {
         const r = getPaperResult(subj, ser, paper);
-        return { hasMark: r.hasMark, mark: r.mark, max: r.max, grade: r.grade, note: '' };
+        return { hasMark: r.hasMark, mark: r.mark, max: r.max, grade: r.grade, partial: '' };
     }
     const t = getSeriesTotals(subj, ser);
     return {
@@ -908,7 +998,7 @@ function getSeriesSummary(subj, ser, view) {
         mark: t.total,
         max: t.max,
         grade: t.grade,
-        note: t.hasAnyMark && t.entered < t.paperCount ? `${t.entered} of ${t.paperCount} papers entered` : ''
+        partial: t.hasAnyMark && t.entered < t.paperCount ? `${t.entered} of ${t.paperCount} papers entered` : ''
     };
 }
 
@@ -943,6 +1033,7 @@ function renderPanels() {
         el.innerHTML = `<div class="empty-msg">Add a subject to get started.</div>`;
         return;
     }
+    const plusMinus = data.settings.plusMinus;
     el.innerHTML = `<div class="subject-panel active" id="panel-${subj.id}">
         <div class="subject-header">
             <input class="subject-name-input" value="${esc(subj.name)}" aria-label="Subject name"
@@ -951,7 +1042,11 @@ function renderPanels() {
         </div>
         <div class="view-bar">
             <div class="view-chips" id="view-chips" role="group" aria-label="Show results for"></div>
-            <button class="expand-btn" id="papers-toggle" onclick="togglePapersEditor('${subj.id}')"></button>
+            <div class="view-actions">
+                <button class="expand-btn toggle-btn${plusMinus ? ' on' : ''}" id="plusminus-toggle"
+                        aria-pressed="${plusMinus}" onclick="togglePlusMinus()">+/− grades</button>
+                <button class="expand-btn" id="papers-toggle" onclick="togglePapersEditor('${subj.id}')"></button>
+            </div>
         </div>
         <div id="papers-editor"></div>
         <div id="results-region"></div>
@@ -1029,7 +1124,7 @@ function gradeClass(grade) {
 
 function marksCellHtml(s) {
     if (!s.hasMark) return '—';
-    return `${fmt(s.mark)} / ${fmt(s.max)}` + (s.note ? `<span class="partial-note">${s.note}</span>` : '');
+    return `${fmt(s.mark)} / ${fmt(s.max)}` + (s.partial ? `<span class="partial-note">${s.partial}</span>` : '');
 }
 
 function pctText(s) {
@@ -1054,7 +1149,9 @@ function renderResults(subj) {
     subj.series.forEach((ser, i) => {
         const s = getSeriesSummary(subj, ser, view);
         const isOpen = expandedSeriesId === ser.id;
-        html += `<tr>
+        const shaded = i % 2 === 1;   // shade every other series (its editor row gets the same shade)
+        const rowClass = [shaded ? 'alt' : '', isOpen ? 'open' : ''].filter(Boolean).join(' ');
+        html += `<tr class="${rowClass}">
             <td><div class="series-name-cell">
                 <input id="series-name-${ser.id}" value="${esc(ser.name)}" placeholder="e.g. June 2024" aria-label="Exam series name"
                        oninput="renameSeries('${subj.id}','${ser.id}', this.value)">
@@ -1072,15 +1169,15 @@ function renderResults(subj) {
             </div></td>
         </tr>`;
 
-        if (isOpen) html += renderSeriesEditor(subj, ser);
+        if (isOpen) html += renderSeriesEditor(subj, ser, shaded);
     });
 
     html += `</tbody></table>`;
     el.innerHTML = html;
 }
 
-function renderSeriesEditor(subj, ser) {
-    let html = `<tr><td colspan="5" style="padding:0;">
+function renderSeriesEditor(subj, ser, shaded) {
+    let html = `<tr class="${shaded ? 'alt' : ''}"><td colspan="5" style="padding:0;">
         <div class="expanded-content open">`;
 
     if (subj.papers.length === 0) {
@@ -1091,18 +1188,22 @@ function renderSeriesEditor(subj, ser) {
                 <span class="paper-label">Paper</span>
                 <span class="paper-label">Mark</span>
                 <span class="paper-label grade-col">Grade</span>
+                <span class="paper-label note-col">Note</span>
             </div>`;
         subj.papers.forEach(p => {
             const r = getPaperResult(subj, ser, p);
+            const name = esc(paperLabel(p));
             html += `<div class="paper-row marks-row">
-                <span class="paper-name">${esc(paperLabel(p))}</span>
+                <span class="paper-name">${name}</span>
                 <div class="mark-field">
                     <input type="number" min="0" max="${p.maxMarks}" step="any" value="${r.hasMark ? r.mark : ''}" placeholder="–"
-                           aria-label="Mark for ${esc(paperLabel(p))}"
+                           aria-label="Mark for ${name}"
                            oninput="updateMark('${subj.id}','${ser.id}','${p.id}',this.value)">
                     <span class="mark-max">/ ${fmt(r.max)}</span>
                 </div>
                 <span class="paper-grade ${gradeClass(r.grade)}" id="pgrade-${ser.id}-${p.id}">${r.grade}</span>
+                <input class="note-input" value="${esc(ser.notes[p.id] || '')}" placeholder="Note" aria-label="Note for ${name}"
+                       oninput="updateNote('${subj.id}','${ser.id}','${p.id}',this.value)">
             </div>`;
         });
         html += `</div>`;
@@ -1157,7 +1258,7 @@ function toggleExpand(serId) {
 
 
 /* ===== GRAPH =====
-   buildChartModel     -> what to show (marks, grades, boundaries) for the current view
+   buildChartModel     -> what to show (marks, grades, boundaries, notes) for the current view
    computeChartLayout  -> where everything goes, in pixels
    tweenChartLayout    -> an in-between layout, used to animate from one view to another
    drawChart           -> turns a layout into SVG */
@@ -1173,18 +1274,28 @@ function buildChartModel(subj) {
 
     const points = subj.series.map((ser, index) => {
         const s = getSeriesSummary(subj, ser, view);
+
         const bounds = {};
         if (scale > 0) {
             for (let g = 1; g <= 9; g++) {
                 if (hasValue(ser.boundaries[g])) bounds[g] = Number(ser.boundaries[g]) * scale;
             }
         }
+
+        // Paper view: that paper's note. Total view: every paper's note, labelled.
+        const notes = [];
+        (paper ? [paper] : subj.papers).forEach(p => {
+            const text = String(ser.notes[p.id] || '').trim();
+            if (text) notes.push({ paper: paper ? '' : paperLabel(p), text });
+        });
+
         return {
             index,
             label: String(ser.name || '').trim() || 'Series ' + (index + 1),
             mark: s.hasMark ? s.mark : null,
             grade: s.hasMark ? s.grade : '—',
-            note: s.note,
+            partial: s.partial,
+            notes,
             bounds
         };
     });
@@ -1206,7 +1317,7 @@ function computeChartLayout(model, available) {
     const plotted = model.points.filter(p => p.mark !== null);
     const yMax = Math.max(model.max, 1, ...plotted.map(p => p.mark));
 
-    const L = { W, H, n, slot, grid: [], texts: [], blines: [], blabels: [], points: [] };
+    const L = { W, H, n, slot, grid: [], texts: [], blines: [], blabels: [], points: [], lineOpacity: 1 };
     const xAt = i => slotX(L, i);
     const yAt = v => round1(C.top + plotH * (1 - v / yMax));
     const addText = (cls, x, y, text, anchor, middle) => {
@@ -1275,7 +1386,7 @@ function computeChartLayout(model, available) {
             mark: p.mark,
             markText: fmt(p.mark),
             gradeText: p.grade === '—' ? '' : 'Grade ' + p.grade,
-            partial: !!p.note,
+            partial: !!p.partial,
             opacity: 1
         });
     });
@@ -1321,15 +1432,16 @@ function tweenChartLayout(A, B, t) {
     };
 
     /* Points: a series with a mark in both views glides between them. A series
-       with a mark in only one view slides onto / off the other view's line while fading. */
+       with a mark in only one view slides onto / off the other view's line while
+       fading (or just fades in place if the other view has no marks at all). */
     const inA = new Map(A.points.map(p => [p.index, p]));
     const inB = new Map(B.points.map(p => [p.index, p]));
     const indices = [...new Set([...inA.keys(), ...inB.keys()])].sort((x, y) => x - y);
     const points = indices.map(i => {
         const a = inA.get(i), b = inB.get(i);
         const homeX = slotX(B, i);
-        const from = a || ghostOnLine(A.points, homeX);
-        const to = b || ghostOnLine(B.points, homeX);
+        const from = a || (A.points.length > 0 ? ghostOnLine(A.points, homeX) : b);
+        const to = b || (B.points.length > 0 ? ghostOnLine(B.points, homeX) : a);
         const label = t < 0.5 ? (a || b) : (b || a);   // which view's grade label / marker style to show
         const mark = a && b ? lerp(a.mark, b.mark) : (a || b).mark;
         return {
@@ -1352,7 +1464,9 @@ function tweenChartLayout(A, B, t) {
             pts: b.pts.map((p, k) => [round1(lerp(a.pts[k][0], p[0])), round1(lerp(a.pts[k][1], p[1]))])
         })),
         blabels: mix(A.blabels, B.blabels, (a, b) => ({ x: round1(lerp(a.x, b.x)), y: round1(lerp(a.y, b.y)) })),
-        points
+        points,
+        // The line only fades when one of the two views has no marks at all
+        lineOpacity: lerp(A.points.length > 0 ? A.lineOpacity : 0, B.points.length > 0 ? 1 : 0)
     };
 }
 
@@ -1380,8 +1494,8 @@ function drawChart(L, interactive) {
     L.texts.filter(shown).forEach(tx => {
         deco += `<text class="${tx.cls}" x="${tx.x}" y="${tx.y}" text-anchor="${tx.anchor}"${tx.middle ? ' dy="0.32em"' : ''}${op(tx)}>${esc(tx.text)}</text>`;
     });
-    if (L.points.length > 1) {
-        deco += `<polyline class="marks-line" points="${L.points.map(p => p.x + ',' + p.y).join(' ')}"/>`;
+    if (L.points.length > 1 && L.lineOpacity > 0.005) {
+        deco += `<polyline class="marks-line" points="${L.points.map(p => p.x + ',' + p.y).join(' ')}"${op({ opacity: L.lineOpacity })}/>`;
     }
     L.points.filter(shown).forEach(p => {
         deco += `<g${op(p)}>`
@@ -1396,15 +1510,14 @@ function drawChart(L, interactive) {
     if (interactive) {
         L.points.forEach(p => {
             const m = chartModel.points[p.index];
-            m.cx = p.x;
-            m.cy = p.y;
             const aria = `${m.label}: ${fmt(m.mark)} out of ${fmt(chartModel.max)}`
                 + (m.grade !== '—' ? `, grade ${m.grade}` : '')
-                + (m.note ? ` (${m.note})` : '');
+                + (m.partial ? ` (${m.partial})` : '')
+                + m.notes.map(n => `. ${n.paper ? n.paper + ': ' : ''}${n.text}`).join('');
             hits += `<circle class="hit" cx="${p.x}" cy="${p.y}" r="16" tabindex="0" role="img" aria-label="${esc(aria)}"
-                        onmouseenter="showChartTip(${p.index})" onmouseleave="hideChartTip()"
-                        onfocus="showChartTip(${p.index})" onblur="hideChartTip()"
-                        onclick="showChartTip(${p.index}); event.stopPropagation()"/>`;
+                        onmouseenter="showChartTip(${p.index}, this)" onmouseleave="hideChartTip()"
+                        onfocus="showChartTip(${p.index}, this)" onblur="hideChartTip()"
+                        onclick="showChartTip(${p.index}, this); event.stopPropagation()"/>`;
         });
     }
 
@@ -1427,12 +1540,16 @@ function renderChart(subj, animate) {
 
     cancelAnimationFrame(chartAnim);
     chartAnim = 0;
+    hideChartTip();
 
     const available = Math.floor(scroller.getBoundingClientRect().width) || 640;
     lastChartWidth = available;
 
+    // The graph appears as soon as there is something to plot: a mark, or grade boundaries
     chartModel = buildChartModel(subj);
-    if (!chartModel.points.some(p => p.mark !== null)) {
+    const hasMarks = chartModel.points.some(p => p.mark !== null);
+    const hasBoundaries = chartModel.points.some(p => Object.keys(p.bounds).length > 0);
+    if (!hasMarks && !hasBoundaries) {
         chartLayout = null;
         wrap.style.width = '';
         wrap.innerHTML = `<div class="chart-empty">No marks entered yet.</div>`;
@@ -1463,34 +1580,44 @@ function renderChart(subj, animate) {
     chartAnim = requestAnimationFrame(frame);
 }
 
-function showChartTip(index) {
-    const wrap = document.getElementById('chart');
-    const scroller = document.getElementById('chart-scroll');
+/* Tooltip for a graph node: marks, grade and any notes. `target` is the node being hovered / focused. */
+function showChartTip(index, target) {
     const p = chartModel && chartModel.points[index];
-    if (!wrap || !scroller || !p || p.mark === null) return;
+    if (!p || p.mark === null || !target) return;
 
     let tip = document.getElementById('chart-tip');
     if (!tip) {
         tip = document.createElement('div');
         tip.id = 'chart-tip';
         tip.className = 'chart-tip';
-        wrap.appendChild(tip);
+        document.body.appendChild(tip);
     }
 
     const max = chartModel.max;
     const pct = max > 0 ? ` (${(p.mark / max * 100).toFixed(1)}%)` : '';
-    tip.innerHTML = `<strong>${esc(p.label)}</strong>
+    let html = `<strong>${esc(p.label)}</strong>
         <div>${esc(chartModel.title)}: ${fmt(p.mark)} / ${fmt(max)}${pct}</div>
-        <div>Grade: ${p.grade}</div>
-        ${p.note ? `<div class="tip-note">${esc(p.note)}</div>` : ''}`;
+        <div>Grade: ${p.grade}</div>`;
+    if (p.partial) html += `<div class="tip-partial">${esc(p.partial)}</div>`;
+    if (p.notes.length > 0) {
+        html += `<div class="tip-notes">`
+            + p.notes.map(n => `<div>${n.paper ? `<strong>${esc(n.paper)}:</strong> ` : ''}${esc(n.text)}</div>`).join('')
+            + `</div>`;
+    }
+    tip.innerHTML = html;
     tip.style.display = 'block';
 
-    // Keep the tooltip inside the visible part of the graph
+    // Above the node if there's room, otherwise below; always kept inside the window
+    const r = target.getBoundingClientRect();
+    const cx = r.left + r.width / 2;
+    const cy = r.top + r.height / 2;
     const tw = tip.offsetWidth, th = tip.offsetHeight;
-    const minLeft = scroller.scrollLeft + 4;
-    const maxLeft = scroller.scrollLeft + scroller.clientWidth - tw - 4;
-    tip.style.left = Math.max(minLeft, Math.min(maxLeft, p.cx - tw / 2)) + 'px';
-    tip.style.top = (p.cy - th - 14 >= 0 ? p.cy - th - 14 : p.cy + 14) + 'px';
+    const viewW = document.documentElement.clientWidth;
+    const viewH = document.documentElement.clientHeight;
+    let top = cy - th - 14;
+    if (top < 8) top = Math.min(cy + 14, viewH - th - 8);
+    tip.style.left = Math.max(8, Math.min(viewW - tw - 8, cx - tw / 2)) + 'px';
+    tip.style.top = Math.max(8, top) + 'px';
 }
 
 function hideChartTip() {
@@ -1542,6 +1669,9 @@ if (window.ResizeObserver) {
 } else {
     window.addEventListener('resize', handleResize);
 }
+
+// The tooltip is positioned against the window, so hide it when anything scrolls
+window.addEventListener('scroll', hideChartTip, true);
 </script>
 
 </body>
